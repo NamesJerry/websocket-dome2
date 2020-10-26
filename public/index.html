@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <style>
+        * {
+            padding: 0;
+            margin: 0;
+        }
+
+        html,
+        body {
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        #send,
+        #receive {
+            width: 80px;
+            height: 30px;
+            outline: none;
+            text-align: center;
+            font-size: 18px;
+            margin-bottom: 30px;
+        }
+
+        .wrap {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        option {
+            width: 20px;
+            outline: none;
+        }
+        .content p{
+            font-size: 18px;
+            font-weight:bold;
+            text-align: center;
+        }
+        .content{
+           display: flex;
+           flex-direction: column;
+           margin-top: 30px;
+            
+        }
+        .content .con_list{
+            width: 600px;
+            height: 300px;
+            border: 1px solid #ccc;
+        }
+        button{
+            width: 80px;
+            height: 50px;
+        }
+        textarea{
+            width: 600px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="wrap">
+        <label>选择身份: <select id="send">
+                <option value="jerry">jerry</option>
+                <option value="tony">tony</option>
+                <option value="tom">tom</option>
+            </select>
+        </label>
+
+        <label>接收者: <select id="receive">
+                <option value="jerry">jerry</option>
+                <option value="tony" selected>tony</option>
+                <option value="tom">tom</option>
+            </select>
+        </label>
+        <textarea id="message" cols="30" rows="10"></textarea>
+        <button>发送</button>
+    </div>
+     <div class="content">
+           <p>消息会话</p>
+           <div class="con_list">
+                
+           </div>
+     </div>
+</body>
+
+</html>
+<script>
+     var btn=document.getElementsByTagName('button')[0];
+     var textarea= document.getElementsByTagName('textarea')[0];
+     var sendDom=document.getElementById('send');
+     var receiveDom=document.getElementById('receive');
+     var con_list=document.getElementsByClassName('con_list')[0];
+     btn.onclick=()=>{
+         var ajx=new XMLHttpRequest();
+         var param = 'message='+textarea.value + '&from=' +sendDom.options[sendDom.selectedIndex].value + '&to=' + receiveDom.options[receiveDom.selectedIndex].value;
+         ajx.open('post','/chat');
+         ajx.setRequestHeader('Content-type','application/x-www-form-urlencoded')
+         ajx.onreadystatechange=()=>{
+             if(ajx.readyState==4 && ajx.status == 200){
+                 var data = JSON.parse(ajx.responseText);
+                  if(!data.succeed){  
+                       con_list.innerHTML=con_list.innerHTML + "<span style='color:red'>" + data.msg + "</span>" + "</br>"
+                  }
+             }
+         }
+         ajx.send(param);
+     }
+    var initWebSocket = function (peo) {
+        var url = 'ws://' + window.location.host + "/ws/" + peo;
+        console.log(url);
+        var ws = new WebSocket(url);
+        ws.addEventListener('open', () => {
+            ws.send('老子终于连上了');
+            console.log('已经连接完成');
+        })
+        ws.addEventListener('message', (event) => {
+            console.log('已经收到消息', event.data);
+            var data = JSON.parse(event.data);
+            con_list.innerHTML=con_list.innerHTML + `${data.from}:  ${data.message}`+"</br>"
+        })
+        ws.addEventListener('error', (err) => {
+            console.log('连接发生错误', err);
+        });
+        ws.addEventListener('close', () => {
+            console.log('连接关闭');
+        })
+    }
+    sendDom.onchange=()=>{
+        initWebSocket(sendDom.options[sendDom.selectedIndex].value);
+    }
+    
+    initWebSocket(sendDom.options[sendDom.selectedIndex].value);
+</script>
